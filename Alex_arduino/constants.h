@@ -25,7 +25,9 @@ typedef enum
   RESP_BAD_PACKET = 2,
   RESP_BAD_CHECKSUM = 3,
   RESP_BAD_COMMAND = 4,
-  RESP_BAD_RESPONSE = 5 
+  RESP_BAD_RESPONSE = 5,
+  RESP_COLOR = 6,
+  RESP_ULTRASONIC = 7 
 } TResponseType;
 
 
@@ -40,7 +42,29 @@ typedef enum
   COMMAND_TURN_RIGHT = 3,
   COMMAND_STOP = 4,
   COMMAND_GET_STATS = 5,
-  COMMAND_CLEAR_STATS = 6
+  COMMAND_CLEAR_STATS = 6,
+  COMMAND_COLOR = 7,
+  COMMAND_ULTRASONIC = 8,
+  COMMAND_OPEN_CLAW = 9,
+  COMMAND_CLOSE_CLAW = 10
 } TCommandType;
-#endif
 
+typedef enum 
+{
+  FORWARD = 1,
+  BACKWARD = 2,
+  LEFT = 3,
+  RIGHT = 4,
+} TDirection;
+
+// Direction values
+typedef enum Tdir
+{
+  STOP,
+  GO,
+  BACK,
+  CCW,
+  CW
+} Tdir;
+
+#endif

@@ -94,7 +94,7 @@ void backward(float dist, float speed)
   targetTicks=leftReverseTicksTurns + deltaTicks;
 
   dir = (TDirection) LEFT;
-  move(speed,RIGHT);
+  move(speed,LEFT);
 }
   // ccw(ang, speed);
 

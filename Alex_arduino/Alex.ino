@@ -312,6 +312,11 @@ ISR(INT3_vect)
 void setupSerial()
 {
   // To replace later with bare-metal.
+  /*PRR0 &= ~(1 << PRUSART0);
+  UBRR0H = 0;
+  UBRR0L = (unsigned char) 103;
+  UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
+  UCSR0A = 0;*/
   Serial.begin(9600);
   // Change Serial to Serial2/Serial3/Serial4 in later labs when using the other UARTs
 }
@@ -324,7 +329,7 @@ void startSerial()
 {
   // Empty for now. To be replaced with bare-metal code
   // later on.
-  
+  UCSR0B = (1 << RXEN0) | (1 << TXEN0);
 }
 
 // Read the serial port. Returns the read character in
@@ -334,24 +339,34 @@ void startSerial()
 int readSerial(char *buffer)
 {
 
-  int count=0;
+  /*int count=0;
+  while((UCSR0A & (1 << RXC0))) {
 
-  // Change Serial to Serial2/Serial3/Serial4 in later labs when using other UARTs
-
-  while(Serial.available())
-    buffer[count++] = Serial.read();
+  // Change Serial to Serial2/Serial3/Serial4 in later labs when using other UART
+    buffer[count++] = UDR0;
+  }
+  return count;*/
+  int count = 0;
+  while (Serial.available())
+  buffer[count++] = Serial.read();
 
   return count;
 }
 
+
 // Write to the serial port. Replaced later with
 // bare-metal code
-
 void writeSerial(const char *buffer, int len)
 {
+  /*for (int i = 0; i < len; i++) {
+    while (!(UCSR0A & (1 << UDRE0)));
+    UDR0 = buffer[i];
+  }*/
+  
   Serial.write(buffer, len);
   // Change Serial to Serial2/Serial3/Serial4 in later labs when using other UARTs
 }
+
 
 /*
  * Alex's setup and run codes
@@ -391,33 +406,51 @@ void initializeState()
 
 void handleCommand(TPacket *command)
 {
+  uint32_t dist;
   switch(command->command)
   {
     // For movement commands, param[0] = distance, param[1] = speed.
     case COMMAND_FORWARD:
         sendOK();
         forward((double) command->params[0], (float) command->params[1]);
-      break;
+        break;
     case COMMAND_REVERSE:
         sendOK();
         backward((double) command->params[0], (float) command->params[1]);
-      break;
+        break;
     case COMMAND_TURN_LEFT:
         sendOK();
         left((double) command->params[0], (float) command->params[1]);
-      break;
+        break;
     case COMMAND_TURN_RIGHT:
         sendOK();
         right((double) command->params[0], (float) command->params[1]);
-      break;
+        break;
     case COMMAND_GET_STATS:
         sendStatus();
-      break;
+        break;
     case COMMAND_CLEAR_STATS:
         clearOneCounter(command->params[0]);
         sendOK();
-      break;
-        
+        break;
+    case COMMAND_COLOR:
+        sendOK();
+        read_color();
+        break;
+    case COMMAND_ULTRASONIC:
+        sendOK();
+        dist = get_ultrasonic();
+        SendDist(dist);
+        break;
+    case COMMAND_OPEN_CLAW:
+        sendOK();
+        open_claw();
+        break;
+    case COMMAND_CLOSE_CLAW:
+        sendOK();
+        close_claw();
+        break;
+      
     default:
       sendBadCommand();
   }
@@ -470,6 +503,9 @@ void setup() {
   setupEINT();
   setupSerial();
   startSerial();
+  setup_ultrasonic();
+  setup_colorsensor();
+  setup_servo();
   enablePullups();
   initializeState();
   sei();
@@ -502,6 +538,25 @@ void loop() {
 // Uncomment the code below for Step 2 of Activity 3 in Week 8 Studio 2
 
  //forward(0, 100);
+ // put your main code here, to run repeatedly:
+  TPacket recvPacket; // This holds commands from the Pi
+
+  TResult result = readPacket(&recvPacket);
+  
+  if(result == PACKET_OK)
+    handlePacket(&recvPacket);
+  else
+    if(result == PACKET_BAD)
+    {
+      sendBadPacket();
+    }
+    else
+      if(result == PACKET_CHECKSUM_BAD)
+      {
+        sendBadChecksum();
+      } 
+      
+
    if(deltaDist > 0)
   {
     if(dir==FORWARD)
@@ -559,23 +614,5 @@ void loop() {
     }
   }
 
- // put your main code here, to run repeatedly:
-  TPacket recvPacket; // This holds commands from the Pi
-
-  TResult result = readPacket(&recvPacket);
-  
-  if(result == PACKET_OK)
-    handlePacket(&recvPacket);
-  else
-    if(result == PACKET_BAD)
-    {
-      sendBadPacket();
-    }
-    else
-      if(result == PACKET_CHECKSUM_BAD)
-      {
-        sendBadChecksum();
-      } 
-      
-
+ 
 }

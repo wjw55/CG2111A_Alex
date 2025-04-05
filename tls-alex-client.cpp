@@ -19,6 +19,8 @@ static volatile int networkActive=0;
 // variables to keep track of the mode
 static int mode = 1; // 0 = original command mode, 1 = WASD mode
 
+static volatile int actionInProgress = 0; // 0 = no action, 1 = action in progress
+
 // constants for WASD mode
 int speed = 70;
 int distance = 5;
@@ -77,6 +79,21 @@ void handleMessage(const char *buffer)
 {
 	printf("MESSAGE FROM ALEX: %s\n", &buffer[1]);
 }
+ 
+void handleUltrasonic(const char *buffer)
+{
+	int32_t data[16];
+	memcpy(data, &buffer[1], sizeof(data));
+
+	printf("Ultrasonic Reading: %d cm\n", data[0]);
+}
+void handleColor(const char *buffer)
+{
+	int32_t data[16];
+	memcpy(data, &buffer[1], sizeof(data));
+
+	printf("Color Sensor Reading: %d %d %d\n", data[0], data[1], data[2]);
+}
 
 void handleCommand(const char *buffer)
 {
@@ -99,7 +116,14 @@ void handleNetwork(const char *buffer, int len)
 		case NET_STATUS_PACKET:
 		handleStatus(buffer);
 		break;
-
+		
+		case NET_ULTRASONIC_PACKET:
+		handleUltrasonic(buffer);
+		break;
+		
+		case NET_COLOR_PACKET:
+		handleColor(buffer);
+		break;
 		case NET_MESSAGE_PACKET:
 		handleMessage(buffer);
 		break;
@@ -108,25 +132,29 @@ void handleNetwork(const char *buffer, int len)
 		handleCommand(buffer);
 		break;
 	}
+	// Reset the actionInProgress flag after processing the response
+    actionInProgress = 0;
 }
 
 void sendData(void *conn, const char *buffer, int len)
 {
-	int c;
-	printf("\nSENDING %d BYTES DATA\n\n", len);
-	if(networkActive)
-	{
-		/* TODO: Insert SSL write here to write buffer to network */
-		printf("\nSENDING %d BYTES DATA\n\n", len);
-      	c = sslWrite(conn, buffer, len);
+    int c;
+    printf("\nSENDING %d BYTES DATA\n\n", len);
+    if (networkActive && !actionInProgress) // Only send if no action is in progress
+    {
+        actionInProgress = 1; // Set the flag to indicate action in progress
+        c = sslWrite(conn, buffer, len);
 
-      if (c < 0)
-      {
-        perror("MAN! Error writing to server: ");
-      }
-		/* END TODO */	
-		networkActive = (c > 0);
-	}
+        if (c < 0)
+        {
+            perror("Error writing to server: ");
+        }
+        networkActive = (c > 0);
+    }
+    else if (actionInProgress)
+    {
+        printf("Action in progress. Ignoring new command.\n");
+    }
 }
 
 void *readerThread(void *conn)
@@ -204,7 +232,7 @@ void getParams(int32_t *params)
 
 void WASD_Command(void *conn, int *quit)
 {
-	printf("Enter WASD command (W=forward, A=left, S=stop, D=right)\n");
+	printf("Enter WASD command (W=forward, A=left, S=stop, D=right), C=get color sensor reading, V=get ultrasonic reading, X=get stats, Z=clear	stats, K=open claw, L=close claw \n");
 	char ch = getKeypress();
 	char buffer[10];
 	int32_t params[2];
@@ -212,7 +240,7 @@ void WASD_Command(void *conn, int *quit)
 
 	switch(ch)
 	{
-		case 'w':
+		case 'w': //forward
 		case 'W':
 			buffer[1] = 'f';
 			params[0] = distance;
@@ -220,7 +248,7 @@ void WASD_Command(void *conn, int *quit)
 			memcpy(&buffer[2], params, sizeof(params));
 			sendData(conn, buffer, sizeof(buffer));
 			break;
-		case 's':
+		case 's': //reverse
 		case 'S':
 			buffer[1] = 'b';
 			params[0] = distance;
@@ -228,7 +256,7 @@ void WASD_Command(void *conn, int *quit)
 			memcpy(&buffer[2], params, sizeof(params));
 			sendData(conn, buffer, sizeof(buffer));
 			break;
-		case 'a':
+		case 'a': //left
 		case 'A':
 			buffer[1] = 'l';
 			params[0] = angle;
@@ -236,7 +264,7 @@ void WASD_Command(void *conn, int *quit)
 			memcpy(&buffer[2], params, sizeof(params));
 			sendData(conn, buffer, sizeof(buffer));
 			break;
-		case 'd':
+		case 'd': //right
 		case 'D':
 			buffer[1] = 'r';
 			params[0] = angle;
@@ -244,7 +272,62 @@ void WASD_Command(void *conn, int *quit)
 			memcpy(&buffer[2], params, sizeof(params));
 			sendData(conn, buffer, sizeof(buffer));
 			break;
-		case 'm':
+		
+		case 'c': //get color sensor reading
+		case 'C':
+			buffer[1] = 'u';
+			params[0] = 0;
+			params[1] = 0;
+			memcpy(&buffer[2], params, sizeof(params));
+			sendData(conn, buffer, sizeof(buffer));
+			break;
+		
+		case 'v': //get ultrasonic reading
+		case 'V':
+			buffer[1] = 'v';
+			params[0] = 0;
+			params[1] = 0;
+			memcpy(&buffer[2], params, sizeof(params));
+			sendData(conn, buffer, sizeof(buffer));
+			break;
+		
+		case 'j': //open claw
+		case 'J':
+			buffer[1] = 'j';
+			params[0] = 0;
+			params[1] = 0;
+			memcpy(&buffer[2], params, sizeof(params));
+			sendData(conn, buffer, sizeof(buffer));
+			break;
+		
+		case 'k': //close claw
+		case 'K':
+			buffer[1] = 'k';
+			params[0] = 0;
+			params[1] = 0;
+			memcpy(&buffer[2], params, sizeof(params));
+			sendData(conn, buffer, sizeof(buffer));
+			break;
+		
+		case 'x': //get stats
+		case 'X':
+			buffer[1] = 'g';
+			params[0] = 0;
+			params[1] = 0;
+			memcpy(&buffer[2], params, sizeof(params));
+			sendData(conn, buffer, sizeof(buffer));
+			break;
+
+		case 'z': //clear stats
+		case 'Z':
+			buffer[1] = 'c';
+			params[0] = 0;
+			params[1] = 0;
+			memcpy(&buffer[2], params, sizeof(params));
+			sendData(conn, buffer, sizeof(buffer));
+			break;
+
+		case 'm': //switch to original command mode
 		case 'M':
 			printf("Switching to original command mode\n");
 			mode = 0;
@@ -292,6 +375,14 @@ void Original_command(void *conn, int *quit)
 		case 'C':
 		case 'g':
 		case 'G':
+		case 'u':
+		case 'U':
+		case 'v':
+		case 'V':
+		case 'j':
+		case 'J':
+		case 'k':
+		case 'K':
 				params[0]=0;
 				params[1]=0;
 				memcpy(&buffer[2], params, sizeof(params));
