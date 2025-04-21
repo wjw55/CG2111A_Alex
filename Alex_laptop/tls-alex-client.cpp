@@ -24,6 +24,7 @@ static volatile int actionInProgress = 0; // 0 = no action, 1 = action in progre
 // constants for WASD mode
 int speed = 70;
 int distance = 5;
+int turn_speed = 70;
 int angle = 20;
 
 
@@ -91,8 +92,17 @@ void handleColor(const char *buffer)
 {
 	int32_t data[16];
 	memcpy(data, &buffer[1], sizeof(data));
-
 	printf("Color Sensor Reading: %d %d %d\n", data[0], data[1], data[2]);
+	if (data[3] == 0)
+	{
+		printf("Red is detected\n");
+	}
+	else if (data[3] == 1)
+	{
+		printf("green is detected\n");
+	}
+	printf("distance from Red : %d, distance from Green: %d\n", data[4], data[5]);
+	
 }
 
 void handleCommand(const char *buffer)
@@ -232,7 +242,7 @@ void getParams(int32_t *params)
 
 void WASD_Command(void *conn, int *quit)
 {
-	printf("Enter WASD command (W=forward, A=left, S=stop, D=right), C=get color sensor reading, V=get ultrasonic reading, X=get stats, Z=clear	stats, K=open claw, L=close claw \n");
+	printf("Enter WASD command (W=forward, A=left, S=stop, D=right), C=get color sensor reading, V=get ultrasonic reading, X=get stats, Z=clear	stats, J=open front claw, K=close front claw, P=dispense med kit \n");
 	char ch = getKeypress();
 	char buffer[10];
 	int32_t params[2];
@@ -260,7 +270,7 @@ void WASD_Command(void *conn, int *quit)
 		case 'A':
 			buffer[1] = 'l';
 			params[0] = angle;
-			params[1] = speed;
+			params[1] = turn_speed;
 			memcpy(&buffer[2], params, sizeof(params));
 			sendData(conn, buffer, sizeof(buffer));
 			break;
@@ -268,7 +278,7 @@ void WASD_Command(void *conn, int *quit)
 		case 'D':
 			buffer[1] = 'r';
 			params[0] = angle;
-			params[1] = speed;
+			params[1] = turn_speed;
 			memcpy(&buffer[2], params, sizeof(params));
 			sendData(conn, buffer, sizeof(buffer));
 			break;
@@ -291,7 +301,7 @@ void WASD_Command(void *conn, int *quit)
 			sendData(conn, buffer, sizeof(buffer));
 			break;
 		
-		case 'j': //open claw
+		case 'j': //open front claw
 		case 'J':
 			buffer[1] = 'j';
 			params[0] = 0;
@@ -300,7 +310,7 @@ void WASD_Command(void *conn, int *quit)
 			sendData(conn, buffer, sizeof(buffer));
 			break;
 		
-		case 'k': //close claw
+		case 'k': //close front claw
 		case 'K':
 			buffer[1] = 'k';
 			params[0] = 0;
@@ -308,7 +318,33 @@ void WASD_Command(void *conn, int *quit)
 			memcpy(&buffer[2], params, sizeof(params));
 			sendData(conn, buffer, sizeof(buffer));
 			break;
-		
+		case 'p': //Dispense med kit
+		case 'P':
+			buffer[1] = 'p';
+			params[0] = 0;
+			params[1] = 0;
+			memcpy(&buffer[2], params, sizeof(params));
+			sendData(conn, buffer, sizeof(buffer));
+			break;
+		case '1': //gear 1
+			speed = 50;
+			distance = 2;
+			turn_speed = 50;
+			printf("Gear 1\n");
+			break;
+		case '2': //gear 2
+			speed = 70;
+			distance = 5;
+			turn_speed = 70;
+			printf("Gear 2\n");
+			break;
+		case '3':
+			speed = 90;
+			distance = 8;
+			turn_speed = 90;
+			printf("Gear 3\n");
+			break;
+
 		case 'x': //get stats
 		case 'X':
 			buffer[1] = 'g';
@@ -344,7 +380,7 @@ void WASD_Command(void *conn, int *quit)
 void Original_command(void *conn, int *quit)
 {
 	char ch;
-	printf("Command (f=forward, b=reverse, l=turn left, r=turn right, s=stop, c=clear stats, g=get stats q=exit m = switch mode)\n");
+	printf("Command (f=forward, b=reverse, l=turn left, r=turn right, s=stop, c=get color sensor reading, v=get ultrasonic reading, k=open claw, l=close claw, c=clear stats, g=get stats, q=exit m = switch mode)\n");
 	scanf("%c", &ch);
 
 	// Purge extraneous characters from input stream
@@ -383,6 +419,8 @@ void Original_command(void *conn, int *quit)
 		case 'J':
 		case 'k':
 		case 'K':
+		case 'p':
+		case 'P':
 				params[0]=0;
 				params[1]=0;
 				memcpy(&buffer[2], params, sizeof(params));
@@ -435,7 +473,7 @@ void *writerThread(void *conn)
 /* TODO: #define filenames for the client private key, certificatea,
    CA filename, etc. that you need to create a client */
 
-#define SERVER_NAME "172.20.10.12"
+#define SERVER_NAME "172.20.10.14"
 #define CA_CERT_FNAME "signing.pem"
 #define PORT_NUM 5001
 #define CLIENT_CERT_FNAME "laptop.crt"

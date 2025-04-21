@@ -3,6 +3,8 @@
 #include "packet.h"
 #include <math.h>
 
+#define echo_pin 35
+
 void setup_ultrasonic(){
   //Let PC3 (pin 34) be TRIGGER pin, PC2 (pin 35) be ECHO pin
   DDRC |= (1 << 3);    
@@ -16,7 +18,7 @@ uint32_t get_ultrasonic(){
   PORTC &= ~(1 << 3);    //set trigger pin low
   unsigned long duration = pulseIn(echo_pin,HIGH);   //in microseconds   (can use timers)
   float dist = duration * 0.017;  //let Speed of sound be 340m/s
-  return (uint32_t)round(dist);   //return distance in cm
+  return (uint32_t)dist;   //return distance in cm
 }
 
 

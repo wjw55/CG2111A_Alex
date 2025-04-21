@@ -111,9 +111,11 @@ def lidarScanThread(setupBarrier:Barrier=None, readyBarrier:Barrier=None):
                 # The quality information can be used to filter out low quality scans
                 # You can filter the results based on the quality information here
                 # Or choose to filter the results elsewhere in the processing pipeline
-        
-                filtered = [point for point in results if point[2] > 4]  # Keep quality > 5
-                publish(LIDAR_SCAN_TOPIC, filtered)
+                #print(point[0] for point in results)  # Print the quality information
+                #filtered = [point for point in results if point[2] > 50]  # Keep quality > 4
+                
+                
+                publish(LIDAR_SCAN_TOPIC,results)
 
             if ctx.isExit():
                 break

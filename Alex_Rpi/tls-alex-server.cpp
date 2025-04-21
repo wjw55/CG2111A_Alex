@@ -324,6 +324,12 @@ void handleCommand(void *conn, const char *buffer)
 			uartSendPacket(&commandPacket);
 			break;
 
+		case 'p':
+		case 'P':
+			commandPacket.command = COMMAND_DISPENSE;
+			uartSendPacket(&commandPacket);
+			break;
+		
 		default:
 			printf("Bad command\n");
 

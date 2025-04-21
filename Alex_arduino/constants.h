@@ -46,7 +46,8 @@ typedef enum
   COMMAND_COLOR = 7,
   COMMAND_ULTRASONIC = 8,
   COMMAND_OPEN_CLAW = 9,
-  COMMAND_CLOSE_CLAW = 10
+  COMMAND_CLOSE_CLAW = 10,
+  COMMAND_DISPENSE = 11
 } TCommandType;
 
 typedef enum 

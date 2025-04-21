@@ -19,13 +19,13 @@ from lidar.alex_lidar import resampleLidarScan
 NUMBER_OF_DATAPOINTS_PER_ROUND = 360
 SCANNING_FREQUENCY = 5
 SCANNING_FIELD_OF_VIEW = 360
-DISTANCE_IF_NO_OBSTACLE = 12000
+DISTANCE_IF_NO_OBSTACLE = 6000
 HOLE_WIDTH_MM = 100
 MIN_SAMPLES_FOR_SLAM_UPDATE = 200
 
 
 # Map Constants
-MAP_QUALITY = 5
+MAP_QUALITY = 8
 MAP_SIZE_PIXELS = 500
 MAP_SIZE_METERS = 8
 MAP_SIZE_MILLIMETERS = MAP_SIZE_METERS * 1000
@@ -115,6 +115,9 @@ def slamThread(setupBarrier:Barrier=None, readyBarrier:Barrier=None):
 
             # [OPTIONAL] Filter the scan data to make slam better!
             # bad quality scans are not good for slam
+            threshold = 70
+            dist, ang, quality = zip(*[(d, a, q) for d, a, q in zip(dist, ang, quality) if q > threshold])
+            
 
             # Resample the lidar scan to to fit the slam parameters
             # We also rotate the scan by 90 degrees to align with the robot

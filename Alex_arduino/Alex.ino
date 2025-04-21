@@ -450,7 +450,11 @@ void handleCommand(TPacket *command)
         sendOK();
         close_claw();
         break;
-      
+    case COMMAND_DISPENSE:
+        sendOK();
+        dispense();
+        break;
+        
     default:
       sendBadCommand();
   }

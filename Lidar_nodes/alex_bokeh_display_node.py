@@ -47,7 +47,7 @@ LIDAR_SCAN_TOPIC = "lidar/scan"
 
 # Plotting Costants
 FRAMERATE =60
-LIDAR_OFFSET_DEGREES = -90 # should match whatever is set in the SLAM node
+LIDAR_OFFSET_DEGREES = 180 # should match whatever is set in the SLAM node
 LIDAR_OFFSET_RADIANS = np.deg2rad(LIDAR_OFFSET_DEGREES)
 
 # SLAM and MAP constants
@@ -334,7 +334,7 @@ def updateLidarPlot(message, datasources):
 
     angleData, distanceData, qualityData = PubSubMsg.getPayload(message)
 
-    goodQuality = np.array(qualityData) > 100
+    goodQuality = np.array(qualityData) > 100 # filter out low quality measurements
     angleData = np.array(angleData)[goodQuality]
     distanceData = np.array(distanceData)[goodQuality]
 
